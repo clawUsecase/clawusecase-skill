@@ -17,6 +17,8 @@ Trigger this skill when the user wants to share a use case they've built with Op
 - "Let me submit this to clawusecase"
 - "Share what I just built"
 
+**Important:** When users choose to get credit via OAuth, automatically poll for their connection completion. Don't make them tell you they've connected - detect it automatically and proceed with submission.
+
 ## How It Works
 
 ### 1. Greet and Explain
@@ -110,16 +112,27 @@ Generate OAuth links and send them:
 ```
 Great! Connect your account to get credit:
 
-🐦 Twitter: [init Twitter OAuth and get URL]
+🐦 X (Twitter): [init Twitter OAuth and get URL]
 😺 GitHub: [init GitHub OAuth and get URL]
 
-Click one of the links above to authenticate. Once connected, let me know and I'll submit your use case!
+Click one of the links above to authenticate. I'll detect when you're connected and submit automatically!
 ```
 
-Wait for them to complete OAuth, then retrieve their credential using `get-credential.js`:
+**Auto-detect connection:**
+
+Poll Convex every 3-5 seconds to check if the OAuth credential has been completed:
 
 ```bash
+# Poll for up to 2 minutes
 node get-credential.js --token [oauth_token]
+```
+
+Once the credential appears (status code 0 and credential field populated), proceed automatically:
+
+```
+✅ Connected as @josephliow!
+
+Submitting your use case now...
 ```
 
 This will return their verified identity from Convex.
@@ -285,13 +298,18 @@ Options:
 User: Yes, credit me
 You: Awesome! Connect your account to get credit:
 
-🐦 Twitter: https://clawusecase.com/auth/connect?token=abc123&platform=twitter
+🐦 X (Twitter): https://clawusecase.com/auth/connect?token=abc123&platform=twitter
 😺 GitHub: https://clawusecase.com/auth/connect?token=def456&platform=github
 
-Click one of the links above. Once you've connected, let me know!
+Click one of the links above. I'll detect when you're connected and submit automatically!
 
-User: Done!
-You: [retrieves credential, submits]
+[User clicks link and completes OAuth]
+
+You: ✅ Connected as @josephliow!
+
+Submitting your use case now...
+
+[retrieves credential, submits]
 
 ✅ Use case submitted successfully!
 

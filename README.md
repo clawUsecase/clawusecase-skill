@@ -34,7 +34,7 @@ Your assistant handles the rest!
 When you submit, you can choose:
 
 ### ✅ Get Credit
-Connect your Twitter or GitHub account to:
+Connect your X (Twitter) or GitHub account to:
 - Get a link on the live use case
 - Build your profile in the community
 - Show off your work
