@@ -19,6 +19,8 @@ Trigger this skill when the user wants to share a use case they've built with Op
 
 **Important:** When users choose to get credit via OAuth, automatically poll for their connection completion. Don't make them tell you they've connected - detect it automatically and proceed with submission.
 
+**Implementation requirement:** You MUST actively monitor the polling loop and send an immediate message when connection is detected. Do not run polling silently in the background - check results frequently and respond the moment you see a successful credential. The user should see "✅ Connected as @username!" within seconds of completing OAuth, without having to ask.
+
 ## How It Works
 
 ### 1. Greet and Explain
@@ -120,22 +122,51 @@ Click one of the links above to authenticate. I'll detect when you're connected 
 
 **Auto-detect connection:**
 
-Poll Convex every 3-5 seconds to check if the OAuth credential has been completed:
+Immediately after sending OAuth links, start an active polling loop to detect when the user completes authentication.
 
+**Option 1: Use the helper script (recommended):**
 ```bash
-# Poll for up to 2 minutes
-node get-credential.js --token [oauth_token]
+# Polls every 5 seconds for up to 2 minutes
+./poll-credential.sh [oauth_token]
+
+# Returns credential JSON on success (exit 0)
+# Returns error on timeout (exit 1)
 ```
 
-Once the credential appears (status code 0 and credential field populated), proceed automatically:
-
+**Option 2: Manual polling loop:**
+```bash
+# Implementation: poll up to 24 times (2 minutes total)
+for i in {1..24}; do
+  # Try to get credential (exit 0 if found)
+  if node get-credential.js --token [oauth_token] 2>/dev/null; then
+    # Connection detected! Get the credential data
+    CREDENTIAL=$(node get-credential.js --token [oauth_token] 2>/dev/null)
+    # Immediately notify user
+    echo "✅ Connected as @username!"
+    # Proceed with submission
+    break
+  fi
+  # Not found yet, wait 5 seconds before trying again
+  sleep 5
+done
 ```
-✅ Connected as @josephliow!
 
-Submitting your use case now...
+**Critical:** You must actively monitor the polling loop and respond immediately when the credential is detected. Don't just launch it in the background - check the results after each attempt.
+
+**Example flow:**
+1. Send OAuth links to user
+2. Start polling loop (every 5 seconds)
+3. On each check: look for credential completion
+4. **The moment it's found:** immediately send message: "✅ Connected as @josephliow! Submitting your use case now..."
+5. Extract username from credential JSON
+6. Proceed with submission
+
+**If timeout (2 minutes):**
+```
+⏰ Still waiting for your connection. Take your time - I'll keep checking for another 2 minutes!
 ```
 
-This will return their verified identity from Convex.
+Then continue polling for another 24 attempts.
 
 **If they choose anonymous:**
 
@@ -323,6 +354,7 @@ Your use case is now live for the community to see. Thanks for sharing! 🎉
 - `SKILL.md` - This file (instructions)
 - `submit.js` - Submits use case to clawusecase.com API
 - `get-credential.js` - Retrieves OAuth credential from Convex after auth
+- `poll-credential.sh` - Helper script that polls for credential completion
 - `normalize-tools.js` - Normalizes tool/skill names
 - `README.md` - User documentation
 - `config.json` - Skill configuration
